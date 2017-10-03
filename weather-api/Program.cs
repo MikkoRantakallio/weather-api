@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Ekoodi.Weather.API
 {
@@ -17,53 +18,57 @@ namespace Ekoodi.Weather.API
                 if (cityInput.ToUpper() == "X")
                     exit = true;
 
-                if (!exit && cityInput.Length>0)
+                if (!exit && cityInput.Length > 0)
                 {
-                    // Get current weather
-                    CurrentWeather localWeather = weather.GetWeather(cityInput);
 
-                    if (localWeather.Cod == "200")
+                    Console.WriteLine("");
+
+                    string cityName = weather.GetLocationName(cityInput);
+
+                    if (cityName == "Not found")
                     {
-                        Console.WriteLine("");
-                        Console.WriteLine("Local weather in {0}:", localWeather.LocationName);
-                        Console.WriteLine("Temperature:\t{0} celcius", Math.Round(localWeather.MainData.Temperature-272.15));
-                        Console.WriteLine("Wind speed:\t{0} m/s", Math.Round(localWeather.Wind.Speed));
-
-                        foreach (WeatherDescription descr in localWeather.Descriptions)
-                        {
-                            Console.WriteLine("ID:\t\t{0}", descr.Id);
-                            Console.WriteLine("Description:\t{0}", descr.GroupWeatherCondition);
-                        }
+                        Console.WriteLine("Not found!");
                     }
                     else
                     {
-                        Console.WriteLine("Error in getting weather data!");
+                        Console.WriteLine("Local weather in {0}:", cityName);
+                        Console.WriteLine("Temperature:\t{0} celcius", weather.GetTemperatureC(cityInput));
+                        Console.WriteLine("Wind speed:\t{0} m/s", weather.GetWindSpeed(cityInput));
+
+                        List<WeatherDescription> descrList = weather.GetDescrList();
+
+                        if (descrList != null)
+                        {
+                            foreach (WeatherDescription descr in descrList)
+                            {
+                                Console.WriteLine("ID:\t\t{0}", descr.Id);
+                                Console.WriteLine("Description:\t{0}", descr.GroupWeatherCondition);
+                            }
+                        }
                     }
 
                     // Get forecast for five days
                     Forecast5days forecast = weather.GetForecast(cityInput);
+                    Console.WriteLine("");
 
-                    if (forecast.Cod == "200")
+                    if (forecast != null)
                     {
-                        Console.WriteLine("");
                         Console.WriteLine("5 days / 3h forecast for {0}:", forecast.City.CityName);
+                        Console.WriteLine("Time\t\t\tTemp\tWind\t\tDescr", forecast.City.CityName);
 
                         foreach (Forecast fc in forecast.ForecastList)
                         {
-                            Console.WriteLine(fc.TimeTxt);
-                            Console.WriteLine("Temperature:\t{0} celcius", Math.Round(fc.MainData.Temperature - 272.15));
-                            Console.WriteLine("Wind speed:\t{0} m/s from direction: {1}", Math.Round(fc.Wind.Speed), Math.Round(fc.Wind.Degree));
+                            Console.Write(fc.TimeTxt.Substring(0, fc.TimeTxt.Length-3) + "\t" + Math.Round(fc.MainData.Temperature - 272.15) + " C\t"
+                                + Math.Round(fc.Wind.Speed) + " m/s " + Math.Round(fc.Wind.Degree) + " deg\t");
 
                             foreach (WeatherDescription wd in fc.Descriptions)
                             {
-                                Console.WriteLine("Description:\t{0}", wd.GroupWeatherCondition);
+                                string desc = wd.GroupWeatherCondition;
+                                desc = desc.Substring(0, 1).ToUpper() + desc.Substring(1);
+                                Console.Write(desc);
                             }
                             Console.WriteLine("");
                         }
-                    }
-                    else
-                    {
-                        Console.WriteLine("Error in getting weather forecast!");
                     }
                 }
             } while (!exit);
